@@ -41,7 +41,7 @@ vector<string> getLineTokens(ifstream& file, string line) {
 }
 
 void initRegisters(string fileName) {
-	ifstream infile(fileName);
+	ifstream infile(fileName.c_str());
 	string line;
 	
 	while (getline(infile, line)) {
