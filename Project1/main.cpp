@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <queue>
+#include <list>
 
 using namespace std;
 
@@ -41,12 +41,12 @@ public:
 
 map<string, int> registers;
 vector<int> dataMem;
-queue<InstructionNode*> instructions;
-queue<InstructionNode*> INB;
-queue<InstructionNode*> AIB;
-queue<InstructionNode> LIB;
-queue<RegNode*> ADB;
-queue<RegNode*> REB;
+list<InstructionNode*> instructions;
+list<InstructionNode*> INB;
+list<InstructionNode*> AIB;
+list<InstructionNode*> LIB;
+list<RegNode*> ADB;
+list<RegNode*> REB;
 
 
 
@@ -103,10 +103,81 @@ void initInstructions(string fileName) {
 		int oneVal = registers[currLine[2]];
 		int twoVal = registers[currLine[3]];
 		InstructionNode* temp = new InstructionNode(currLine[0], currLine[1], currLine[2], currLine[3], oneVal, twoVal);
-		instructions.push(temp);
+		instructions.push_back(temp);
 	}
 
 	return;
+}
+
+bool isDone() {
+	int size = 0;
+
+	size = instructions.size() + INB.size() + AIB.size() + LIB.size() + ADB.size() + REB.size();
+
+	if (size > 0) {
+		return false;
+	}
+
+	return true;
+}
+
+void printStep(int stepNo) {
+	string stepStr = "STEP ";
+	stepStr += to_string(stepNo) + ":";
+
+	string INMStr = "INM: ";
+	string INBStr = "INB: ";
+	string AIBStr = "AIB: ";
+	string LIBStr = "LIB: ";
+	string ADBStr = "ADB: ";
+	string REBStr = "REB: ";
+	string RGFStr = "RGF: ";
+	string DAMStr = "DAM: ";
+
+	for (InstructionNode* curr : instructions) {
+		INMStr += "<" + curr->opcode + "," + curr->destReg + "," + curr->opOne + "," + curr->opTwo + ">,";
+	}
+
+	for (InstructionNode* curr : INB) {
+		INBStr += "<" + curr->opcode + "," + curr->destReg + "," + to_string(curr->opOneVal) + "," + to_string(curr->opTwoVal) + ">,";
+	}
+
+	for (InstructionNode* curr : AIB) {
+		AIBStr += "<" + curr->opcode + "," + curr->destReg + "," + to_string(curr->opOneVal) + "," + to_string(curr->opTwoVal) + ">,";
+	}
+
+	for (InstructionNode* curr : LIB) {
+		LIBStr += "<" + curr->opcode + "," + curr->destReg + "," + to_string(curr->opOneVal) + "," + to_string(curr->opTwoVal) + ">,";
+	}
+
+	for (RegNode* curr : ADB) {
+		ADBStr += "<" + curr->regName + "," + to_string(curr->data) + ">,";
+	}
+
+	for (RegNode* curr : REB) {
+		REBStr += "<" + curr->regName + "," + to_string(curr->data) + ">,";
+	}
+
+	for (int i = 0; i < registers.size(); i++) {
+		string currReg = "R" + to_string(i);
+		RGFStr += "<" + currReg + "," + to_string(registers[currReg]) + ">,";
+	}
+
+	for (int i = 0; i < dataMem.size(); i++) {
+		DAMStr += "<" + to_string(i) + "," + to_string(dataMem[i]) + ">,";
+	}
+
+	cout << stepStr << endl;
+	cout << INMStr << endl;
+	cout << INBStr << endl;
+	cout << AIBStr << endl;
+	cout << LIBStr << endl;
+	cout << ADBStr << endl;
+	cout << REBStr << endl;
+	cout << RGFStr << endl;
+	cout << DAMStr << endl;
+	cout << endl;
+
 }
 
 
@@ -116,6 +187,8 @@ int main()
 	initRegisters("registers.txt");
 	initDataMem("datamemory.txt");
 	initInstructions("instructions.txt");
+
+	printStep(0);
 
 	return 0;
 }
