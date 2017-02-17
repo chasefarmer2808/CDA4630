@@ -121,9 +121,18 @@ bool isDone() {
 	return true;
 }
 
+string intToString(int n) {
+	string res;
+	ostringstream convert;
+	convert << n;
+	res = convert.str();
+
+	return res;
+}
+
 void printStep(int stepNo) {
 	string stepStr = "STEP ";
-	stepStr += to_string(stepNo) + ":";
+	stepStr += intToString(stepNo) + ":";
 
 	string INMStr = "INM: ";
 	string INBStr = "INB: ";
@@ -134,37 +143,37 @@ void printStep(int stepNo) {
 	string RGFStr = "RGF: ";
 	string DAMStr = "DAM: ";
 
-	for (InstructionNode* curr : instructions) {
-		INMStr += "<" + curr->opcode + "," + curr->destReg + "," + curr->opOne + "," + curr->opTwo + ">,";
+	for (list<InstructionNode*>::iterator it = instructions.begin(); it != instructions.end(); ++it) {
+		INMStr += "<" + (*it)->opcode + "," + (*it)->destReg + "," + (*it)->opOne + "," + (*it)->opTwo + ">,";
 	}
 
-	for (InstructionNode* curr : INB) {
-		INBStr += "<" + curr->opcode + "," + curr->destReg + "," + to_string(curr->opOneVal) + "," + to_string(curr->opTwoVal) + ">,";
+	for (list<InstructionNode*>::iterator it = INB.begin(); it != INB.end(); ++it) {
+		INBStr += "<" + (*it)->opcode + "," + (*it)->destReg + "," + intToString((*it)->opOneVal) + "," + intToString((*it)->opTwoVal) + ">,";
 	}
 
-	for (InstructionNode* curr : AIB) {
-		AIBStr += "<" + curr->opcode + "," + curr->destReg + "," + to_string(curr->opOneVal) + "," + to_string(curr->opTwoVal) + ">,";
+	for (list<InstructionNode*>::iterator it = AIB.begin(); it != AIB.end(); ++it) {
+		AIBStr += "<" + (*it)->opcode + "," + (*it)->destReg + "," + intToString((*it)->opOneVal) + "," + intToString((*it)->opTwoVal) + ">,";
 	}
 
-	for (InstructionNode* curr : LIB) {
-		LIBStr += "<" + curr->opcode + "," + curr->destReg + "," + to_string(curr->opOneVal) + "," + to_string(curr->opTwoVal) + ">,";
+	for (list<InstructionNode*>::iterator it = LIB.begin(); it != LIB.end(); ++it) {
+		LIBStr += "<" + (*it)->opcode + "," + (*it)->destReg + "," + intToString((*it)->opOneVal) + "," + intToString((*it)->opTwoVal) + ">,";
 	}
 
-	for (RegNode* curr : ADB) {
-		ADBStr += "<" + curr->regName + "," + to_string(curr->data) + ">,";
+	for (list<RegNode*>::iterator it = ADB.begin(); it != ADB.end(); ++it) {
+		ADBStr += "<" + (*it)->regName + "," + intToString((*it)->data) + ">,";
 	}
 
-	for (RegNode* curr : REB) {
-		REBStr += "<" + curr->regName + "," + to_string(curr->data) + ">,";
+	for (list<RegNode*>::iterator it = REB.begin(); it != REB.end(); ++it) {
+		REBStr += "<" + (*it)->regName + "," + intToString((*it)->data) + ">,";
 	}
 
 	for (int i = 0; i < registers.size(); i++) {
-		string currReg = "R" + to_string(i);
-		RGFStr += "<" + currReg + "," + to_string(registers[currReg]) + ">,";
+		string currReg = "R" + intToString(i);
+		RGFStr += "<" + currReg + "," + intToString(registers[currReg]) + ">,";
 	}
 
 	for (int i = 0; i < dataMem.size(); i++) {
-		DAMStr += "<" + to_string(i) + "," + to_string(dataMem[i]) + ">,";
+		DAMStr += "<" + intToString(i) + "," + intToString(dataMem[i]) + ">,";
 	}
 
 	cout << stepStr << endl;
@@ -179,7 +188,6 @@ void printStep(int stepNo) {
 	cout << endl;
 
 }
-
 
 
 int main()
