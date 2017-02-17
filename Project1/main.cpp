@@ -188,7 +188,18 @@ int main()
 	initDataMem("datamemory.txt");
 	initInstructions("instructions.txt");
 
-	printStep(0);
+	int step = 0;
+
+	printStep(step);
+
+	while (!isDone()) {
+		//do stuff
+
+
+
+		step++;
+		printStep(step);
+	}
 
 	return 0;
 }
