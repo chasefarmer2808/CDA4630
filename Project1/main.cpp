@@ -258,6 +258,12 @@ void processREB() {
 	return;
 }
 
+//helper function for deleting the last char in a string.  Supports C++98
+string eraseLastChar(string &str) {
+	str.erase(str.length()-1, 1);
+	return str;
+}
+
 //Helper function for printing the system at the end of each step
 void printStep(int stepNo, ofstream &file) {
 	string stepStr = "STEP ";
@@ -276,50 +282,50 @@ void printStep(int stepNo, ofstream &file) {
 		INMStr += "<" + (*it)->opcode + "," + (*it)->destReg + "," + (*it)->opOne + "," + (*it)->opTwo + ">,";
 	}
 
-	INMStr.pop_back();
+	INMStr = eraseLastChar(INMStr);
 
 	for (list<InstructionNode*>::iterator it = INB.begin(); it != INB.end(); ++it) {
 		INBStr += "<" + (*it)->opcode + "," + (*it)->destReg + "," + intToString((*it)->opOneVal) + "," + intToString((*it)->opTwoVal) + ">,";
 	}
 
-	INBStr.pop_back();
+	INBStr = eraseLastChar(INBStr);
 
 	for (list<InstructionNode*>::iterator it = AIB.begin(); it != AIB.end(); ++it) {
 		AIBStr += "<" + (*it)->opcode + "," + (*it)->destReg + "," + intToString((*it)->opOneVal) + "," + intToString((*it)->opTwoVal) + ">,";
 	}
 
-	AIBStr.pop_back();
+	AIBStr = eraseLastChar(AIBStr);
 
 	for (list<InstructionNode*>::iterator it = LIB.begin(); it != LIB.end(); ++it) {
 		LIBStr += "<" + (*it)->opcode + "," + (*it)->destReg + "," + intToString((*it)->opOneVal) + "," + intToString((*it)->opTwoVal) + ">,";
 	}
 
-	LIBStr.pop_back();
+	LIBStr = eraseLastChar(LIBStr);
 
 	for (list<RegNode*>::iterator it = ADB.begin(); it != ADB.end(); ++it) {
 		ADBStr += "<" + (*it)->regName + "," + intToString((*it)->data) + ">,";
 	}
 
-	ADBStr.pop_back();
+	ADBStr = eraseLastChar(LIBStr);
 
 	for (list<RegNode*>::iterator it = REB.begin(); it != REB.end(); ++it) {
 		REBStr += "<" + (*it)->regName + "," + intToString((*it)->data) + ">,";
 	}
 
-	REBStr.pop_back();
+	REBStr = eraseLastChar(REBStr);
 
 	for (int i = 0; i < registers.size(); i++) {
 		string currReg = "R" + intToString(i);
 		RGFStr += "<" + currReg + "," + intToString(registers[currReg]) + ">,";
 	}
 
-	RGFStr.pop_back();
+	RGFStr = eraseLastChar(RGFStr);
 
 	for (int i = 0; i < dataMem.size(); i++) {
 		DAMStr += "<" + intToString(i) + "," + intToString(dataMem[i]) + ">,";
 	}
 
-	DAMStr.pop_back();
+	DAMStr = eraseLastChar(DAMStr);
 
 	file << stepStr << endl;
 	file << INMStr << endl;
