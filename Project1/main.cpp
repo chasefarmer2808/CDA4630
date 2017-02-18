@@ -41,6 +41,7 @@ public:
 
 map<string, int> registers;
 vector<int> dataMem;
+vector<string> aluOps{ "ADD", "SUB", "AND", "OR" };
 list<InstructionNode*> instructions;
 list<InstructionNode*> INB;
 list<InstructionNode*> AIB;
@@ -130,6 +131,101 @@ string intToString(int n) {
 	return res;
 }
 
+bool isALUOP(const string &op, const vector<string> &array) {
+	return std::find(array.begin(), array.end(), op) != array.end();
+}
+
+void processINM() {
+	if (instructions.size() > 0) {
+		InstructionNode* temp = instructions.front();
+		instructions.pop_front();
+		INB.push_back(temp);
+	}
+
+	return;
+}
+
+void processINB() {
+	if (INB.size() > 0) {
+		InstructionNode* temp = INB.front();
+
+		if (isALUOP(temp->opcode, aluOps)) {
+			AIB.push_back(temp);
+		}
+		else {
+			LIB.push_back(temp);
+		}
+
+		INB.pop_front();
+	}
+
+	return;
+}
+
+void processLIB() {
+	if (LIB.size() > 0) {
+		InstructionNode* temp = LIB.front();
+
+		int sum = temp->opOneVal + temp->opTwoVal;
+		RegNode* reg = new RegNode(temp->destReg, sum);
+		ADB.push_back(reg);
+		LIB.pop_front();
+	}
+
+	return;
+}
+
+void processADB() {
+	if (ADB.size() > 0) {
+		RegNode* temp = ADB.front();
+		int data = dataMem[temp->data];
+		RegNode* reg = new RegNode(temp->regName, data);
+		REB.push_back(reg);
+		ADB.pop_front();
+	}
+
+	return;
+}
+
+void processAIB() {
+	if (AIB.size() > 0) {
+		InstructionNode* temp = AIB.front();
+		int res;
+
+		if (temp->opcode == "ADD") {
+			res = temp->opOneVal + temp->opTwoVal;
+		}
+		else if (temp->opcode == "AND") {
+			res = temp->opOneVal && temp->opTwoVal;
+		}
+		else if (temp->opcode == "OR") {
+			res = temp->opOneVal || temp->opTwoVal;
+		}
+		else if (temp->opcode == "SUB") {
+			res = temp->opOneVal - temp->opTwoVal;
+		}
+		else {
+			res = 0;
+		}
+
+		RegNode* reg = new RegNode(temp->destReg, res);
+		REB.push_back(reg);
+		AIB.pop_front();
+	}
+
+	return;
+}
+
+void processREB() {
+	if (REB.size() > 0) {
+		RegNode* temp = REB.front();
+		registers[temp->regName] = temp->data;
+		REB.pop_front();
+	}
+
+	return;
+}
+
 void printStep(int stepNo) {
 	string stepStr = "STEP ";
 	stepStr += intToString(stepNo) + ":";
@@ -203,7 +299,12 @@ int main()
 	while (!isDone()) {
 		//do stuff
 
-
+		processREB();
+		processADB();
+		processAIB();
+		processLIB();
+		processINB();
+		processINM();
 
 		step++;
 		printStep(step);
