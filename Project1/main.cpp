@@ -41,7 +41,7 @@ public:
 
 map<string, int> registers;
 vector<int> dataMem;
-vector<string> aluOps{ "ADD", "SUB", "AND", "OR" };
+vector<string> aluOps;
 list<InstructionNode*> instructions;
 list<InstructionNode*> INB;
 list<InstructionNode*> AIB;
@@ -108,6 +108,13 @@ void initInstructions(string fileName) {
 	}
 
 	return;
+}
+
+void initOps() {
+	aluOps.push_back("ADD");
+	aluOps.push_back("AND");
+	aluOps.push_back("SUB");
+	aluOps.push_back("OR");
 }
 
 bool isDone() {
@@ -291,6 +298,7 @@ int main()
 	initRegisters("registers.txt");
 	initDataMem("datamemory.txt");
 	initInstructions("instructions.txt");
+	initOps();
 
 	int step = 0;
 
