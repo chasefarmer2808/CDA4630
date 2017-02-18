@@ -230,7 +230,7 @@ void processAIB() {
 			res = temp->opOneVal && temp->opTwoVal;
 		}
 		else if (temp->opcode == "OR") {
-			res = temp->opOneVal || temp->opTwoVal;
+			res = temp->opOneVal | temp->opTwoVal;
 		}
 		else if (temp->opcode == "SUB") {
 			res = temp->opOneVal - temp->opTwoVal;
