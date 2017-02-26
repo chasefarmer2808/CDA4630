@@ -32,7 +32,7 @@ public:
 	string opOne;
 	string opTwo;
 	int opOneVal;
-	int opTwoVal; 
+	int opTwoVal;
 };
 
 /*
@@ -51,7 +51,7 @@ public:
 };
 
 map<string, int> registers;  //this represents the system registers.  It maps the name of the reg to its value.
-vector<int> dataMem;		 //this represents data memory in the system. 
+vector<int> dataMem;		 //this represents data memory in the system.
 vector<string> aluOps;		 //this stores the possible ALU operations.  I store it in a vector for easy look up later.
 list<InstructionNode*> instructions;  //Represents INM buffer.  This list holds InstructionNode nodes for the instructions that are loaded from instructions.txt
 list<InstructionNode*> INB;	 //List that represents instruction buffer.  It recieves InstructionNodes from INM beffer
@@ -87,7 +87,7 @@ vector<string> getLineTokens(ifstream& file, string line) {
 void initRegisters(string fileName) {
 	ifstream infile(fileName.c_str());
 	string line;
-	
+
 	while (getline(infile, line)) {  //for each line in registers.txt
 		vector<string> currLine = getLineTokens(infile, line);
 		registers[currLine[0]] = atoi(currLine[1].c_str());
@@ -109,7 +109,7 @@ void initDataMem(string fileName) {
 	return;
 }
 
-//function for initializing INM 
+//function for initializing INM
 void initInstructions(string fileName) {
 	ifstream infile(fileName.c_str());
 	string line;
@@ -182,7 +182,7 @@ void processINM() {
 	return;
 }
 
-//Processes an instruction in INB if it exists by checking the type of instruction and putting it in 
+//Processes an instruction in INB if it exists by checking the type of instruction and putting it in
 //the appropriate buffer
 void processINB() {
 	if (INB.size() > 0) {
@@ -374,11 +374,11 @@ int main()
 
 	int step = 0;  //starting at step 0
 	ofstream outputFile("./simulation.txt");
-	
+
 	printStep(step, outputFile);  //print initial state of the system
 
 	while (!isDone()) {  //while this is true, process items in buffers as needed
-		
+
 		processREB();
 		processADB();
 		processAIB();
@@ -394,5 +394,3 @@ int main()
 
 	return 0;
 }
-
-
