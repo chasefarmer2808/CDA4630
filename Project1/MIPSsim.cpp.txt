@@ -349,18 +349,6 @@ void printStep(int stepNo, ofstream &file) {
 	file << RGFStr << endl;
 	file << DAMStr << endl;
 	file << endl;
-
-	cout << stepStr << endl;
-	cout << INMStr << endl;
-	cout << INBStr << endl;
-	cout << AIBStr << endl;
-	cout << LIBStr << endl;
-	cout << ADBStr << endl;
-	cout << REBStr << endl;
-	cout << RGFStr << endl;
-	cout << DAMStr << endl;
-	cout << endl;
-
 }
 
 
