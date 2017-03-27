@@ -6,6 +6,7 @@
 #include <vector>
 #include <map>
 #include <bitset>
+#include <math.h>
 
 #define RLELIMIT 9.0
 
