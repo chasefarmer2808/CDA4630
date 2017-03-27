@@ -137,6 +137,23 @@ void initDict(int size) {
 	}
 }
 
+int getRLERange(string ins, int start) {
+	int end = 0;
+
+	while (compInstructions[start]->instruction == ins) {  //count up the repeated instruction
+
+		end = start;
+		start++;
+
+
+		if (start == (compInstructions.size())) {  //this is true if the last instruciton is part of an RLE
+			break;
+		}
+	}
+
+	return end;
+}
+
 void doRLE(string ins, int start, int end) {
 	int count = end - start + 1;
 	int groups = ceil((float)count / RLELIMIT);
@@ -181,36 +198,25 @@ void doRLE(string ins, int start, int end) {
 }
 
 void compress() {
-	//string lastIns;
+	string prevIns;
 	int RLEstart = 0;
 	int RLEend = 0;
-	bool isRLE = false;
 
 	for (int i = 0; i < compInstructions.size(); i++) { //for all instructions except the last
-		RLEstart = i;
-		//TODO: this loop is breaking because of the [i+1] accessing out of bounds on last instruction
-		while (compInstructions[i]->instruction == compInstructions[i + 1]->instruction) {  //start of a new RLE application
-			if (!isRLE) {
-				isRLE = true;
-			}
-			
-			RLEend = i;
-			i++;
 
-			
-			if (i == (compInstructions.size() - 1)) {  //on last instruction.  next one will go out of bounds
-				RLEend = i;  //i is the index of the last instruction at this point
-				break;
-			}
-			
-		}
-		RLEend++;
-		if (isRLE) {
-			doRLE(compInstructions[i]->instruction, RLEstart, RLEend);
-			isRLE = false;
+		if (i > 0) {  //only ystart checking the last instruction after we have looped once
+			prevIns = compInstructions[i-1]->instruction;
+			RLEstart = i - 1;
 		}
 
-		if (i >= compInstructions.size()) {  //this case occurs when the very last instruction was part of an RLE
+		if (compInstructions[i]->instruction == prevIns) {  //start of new RLE application
+			RLEend = getRLERange(compInstructions[i]->instruction, i);  //get the index of the last repeated instruction
+			doRLE(compInstructions[i]->instruction, RLEstart, RLEend);  //perform RLE on the repeated instructions
+			i = RLEend;  //go the the next instruction after the repeated instructions
+			continue;
+		}
+		
+		if (i >= (compInstructions.size() - 1)) {  //this case occurs when the very last instruction was part of an RLE
 			break;  //the last instruction was already handled by the RLE, so we are done compressing
 		}
 
