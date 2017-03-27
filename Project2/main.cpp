@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <bitset>
 
 #define RLELIMIT 9.0
 
@@ -48,6 +49,37 @@ public:
 map<string, InsEntry*> instructions;
 vector<DictEntry*> dictionary;
 vector<CompEntry*> compInstructions;
+
+//C++98 helper function for casting an int to a string.  Useful for printing in for loop, and hash map lookups
+string intToString(int n) {
+	string res;
+	ostringstream convert;
+	convert << n;
+	res = convert.str();
+
+	return res;
+}
+
+string intToBitString(int num, const int numOfBits) {
+	string bitString = "";
+	int MSB = 1 << (numOfBits - 1);
+	int bit;
+
+	for (int i = 0; i < numOfBits; i++) {
+		bit = num & MSB;
+
+		if (bit > 0) {
+			bitString += "1";
+		}
+		else {
+			bitString += "0";
+		}
+		
+		num = num << 1;
+	}
+
+	return bitString;
+}
 
 void countInstructions(string fileName) {
 	ifstream infile(fileName.c_str());
@@ -114,9 +146,12 @@ void doRLE(string ins, int start, int end) {
 		firstInGroup = start;
 		lastInGroup = end;
 
-		//do compression on first in group
+		//TODO do compression on first in group
+
+
 		compInstructions[lastInGroup]->option = "001";
 		//set format to binary string of count
+		compInstructions[lastInGroup]->format = intToBitString((count - 2), 3);
 		return;
 	}
 
@@ -131,10 +166,13 @@ void doRLE(string ins, int start, int end) {
 			lastInGroup = firstInGroup + 8;
 		}
 
-		//do compression on first in group
+		//TODO do compression on first in group
 
 		if (firstInGroup != lastInGroup) {  //group has more than one ins
+			int currCount = lastInGroup - firstInGroup + 1;
+
 			compInstructions[lastInGroup]->option = "001";
+			compInstructions[lastInGroup]->format = intToBitString((currCount - 2), 3);
 		}
 	}
 
@@ -145,10 +183,9 @@ void compress() {
 	//string lastIns;
 	int RLEstart = 0;
 	int RLEend = 0;
-	//int i = 0;
 	bool isRLE = false;
 
-	for (int i = 0; i < compInstructions.size(); i++) {//while (compInstructions[i + 1] != NULL) {  //for all instructions except the last
+	for (int i = 0; i < compInstructions.size(); i++) { //for all instructions except the last
 		RLEstart = i;
 		//TODO: this loop is breaking because of the [i+1] accessing out of bounds on last instruction
 		while (compInstructions[i]->instruction == compInstructions[i + 1]->instruction) {  //start of a new RLE application
@@ -172,15 +209,18 @@ void compress() {
 			isRLE = false;
 		}
 
-		i++;
-
 		if (i >= compInstructions.size()) {  //this case occurs when the very last instruction was part of an RLE
 			break;  //the last instruction was already handled by the RLE, so we are done compressing
 		}
 
+		if (i == compInstructions.size() - 2) {  //next instruction is the last instruction
+			//TODO process instruction and done
+			break;
+		}
+
 		//at this point, we know it is not RLE, and we are not done compressing
 
-		//do compression on compInstruction[i]
+		//TODO do compression on compInstruction[i]
 	}
 
 	//should be done compressing everything at this point
