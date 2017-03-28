@@ -9,6 +9,8 @@
 #include <math.h>
 
 #define RLELIMIT 9.0
+#define INSSIZE 32
+#define OPTCOUNT 7
 
 using namespace std;
 
@@ -50,6 +52,7 @@ public:
 map<string, InsEntry*> instructions;
 vector<DictEntry*> dictionary;
 vector<CompEntry*> compInstructions;
+string optionsByPriority[] = { "111", "011", "100", "101", "010", "110", "000" };
 
 //C++98 helper function for casting an int to a string.  Useful for printing in for loop, and hash map lookups
 string intToString(int n) {
@@ -137,6 +140,43 @@ void initDict(int size) {
 	}
 }
 
+string getBestOption(vector<string> ops) {
+	for (int i = 0; i < OPTCOUNT; i++) {
+		for (int j = 0; j < ops.size(); j++) {
+			if (optionsByPriority[i] == ops[j]) { //found the best option
+				return ops[j];
+			}
+		}
+	}
+}
+
+int getMismatchDistance(bitset<INSSIZE> bits) {
+	int first = 0;
+	int last = 0;
+
+	for (int i = (INSSIZE - 1); i >= 0; i--) {
+		if (bits[i] == 1 && first == 0) {
+			first = i;
+		}
+		else if (bits[i] == 1) {
+			last = 1;
+		}
+	}
+
+	return (first - last - 1);  //return number of bits between mismatches
+}
+
+bool isConsecutive(bitset<INSSIZE> bits) {
+	bitset<INSSIZE> temp(bits << 1);
+
+	if ((temp & bits).count() > 0) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
 int getRLERange(string ins, int start) {
 	int end = 0;
 
@@ -154,6 +194,53 @@ int getRLERange(string ins, int start) {
 	return end;
 }
 
+void doCompression(string ins, int insIndex) {
+	vector<string> availOptions;
+	string bestOpt;
+
+	int mismatches = 0;
+	int distance = -1;
+	bool consecutive = false;
+
+	bitset<INSSIZE> insBits(ins);
+
+	for (int i = 0; i < dictionary.size(); i++) { //for each entry in the dictionsry
+		bitset<INSSIZE> dictBits(dictionary[i]->ins);
+		bitset<INSSIZE> result(insBits ^ dictBits);
+		mismatches = result.count();
+
+		if (mismatches > 1) {
+			distance = getMismatchDistance(result);
+			consecutive = isConsecutive(result);
+		}
+
+		if (mismatches == 0) {
+			availOptions.push_back("111");
+		}
+		else if (mismatches == 1) {
+			availOptions.push_back("011");
+		}
+		else if (mismatches == 2 && consecutive) {
+			availOptions.push_back("100");
+		}
+		else if (mismatches == 4 && consecutive) {
+			availOptions.push_back("101");
+		}
+		else if (mismatches > 1 && distance <= 2) {
+			availOptions.push_back("010");
+		}
+		else if (mismatches == 2 && distance > 2) {
+			availOptions.push_back("110");
+		}
+		else {
+			availOptions.push_back("000");
+		}
+	}
+
+	bestOpt = getBestOption(availOptions);
+	compInstructions[insIndex]->option = bestOpt;
+}
+
 void doRLE(string ins, int start, int end) {
 	int count = end - start + 1;
 	int groups = ceil((float)count / RLELIMIT);
@@ -165,7 +252,7 @@ void doRLE(string ins, int start, int end) {
 		lastInGroup = end;
 
 		//TODO do compression on first in group
-
+		doCompression(compInstructions[firstInGroup]->instruction, firstInGroup);
 
 		compInstructions[lastInGroup]->option = "001";
 		//set format to binary string of count
@@ -185,6 +272,7 @@ void doRLE(string ins, int start, int end) {
 		}
 
 		//TODO do compression on first in group
+		doCompression(compInstructions[firstInGroup]->instruction, firstInGroup);
 
 		if (firstInGroup != lastInGroup) {  //group has more than one ins
 			int currCount = lastInGroup - firstInGroup + 1;
@@ -235,7 +323,7 @@ void compress() {
 	return;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
 	countInstructions("origional.txt");
 	initDict(16);
 	compress();
