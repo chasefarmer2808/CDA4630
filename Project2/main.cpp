@@ -90,6 +90,7 @@ int getSecondSetFromLeft(string bits) {
 	for (int i = 0; i < bits.length(); i++) {
 		if (bits[i] == '1' && foundFirst == false) {
 			foundFirst = true;
+			continue;
 		}
 
 		if (bits[i] == '1') {
@@ -121,12 +122,35 @@ string doBitmask(string ins) {
 	return format;
 }
 
+string doNBitMismatch(string ins) {
+	int startLoc = getFirstSetFromLeft(ins);
+	bitset<5> startBits(startLoc);
+	return startBits.to_string();
+}
+
+string doTwoMismatchAnywhere(string ins) {
+	int first = getFirstSetFromLeft(ins);
+	int second = getSecondSetFromLeft(ins);
+	bitset<5> firstBits(first);
+	bitset<5> secondBits(second);
+
+	string format = firstBits.to_string() + secondBits.to_string();
+
+	return format;
+}
+
 string getCompFormat(string opt, string result, int dictIndex) {
 	string format = "";
 	bitset<4> dIndex(dictIndex);
 
 	if (opt == "010") {
 		format = doBitmask(result);
+	}
+	else if (opt == "011" || opt == "100" || opt == "101") {
+		format = doNBitMismatch(result);
+	}
+	else if (opt == "110") {
+		format = doTwoMismatchAnywhere(result);
 	}
 
 	format += dIndex.to_string();
@@ -391,10 +415,50 @@ void compress() {
 	return;
 }
 
+void printCompressed(ofstream &file) {
+	int lineCount = 0;
+	string compString;
+
+	for (int i = 0; i < compInstructions.size(); i++) {
+		if (compInstructions[i]->format.size()) {
+			compString = compInstructions[i]->option + compInstructions[i]->format;
+
+			for (int j = 0; j < compString.size(); j++) {
+				file << compString[j];
+				lineCount++;
+
+				if (lineCount == 32) {
+					lineCount = 0;
+					file << endl;
+				}
+
+			}
+		}
+	}
+
+	int pad = 32 - lineCount;
+
+	for (int i = 0; i < pad; i++) {
+		file << '0';
+	}
+
+	file << endl;
+
+	file << "xxxx" << endl;
+
+	for (int i = 0; i < dictionary.size(); i++) {
+		file << dictionary[i]->ins << endl;
+	}
+}
+
 int main(int argc, char* argv[]) {
 	countInstructions("origional.txt");
 	initDict(16);
 	compress();
+
+	ofstream outputFile("./compressed.txt");
+	printCompressed(outputFile);
+	outputFile.close();
 
 	return 0;
 }
