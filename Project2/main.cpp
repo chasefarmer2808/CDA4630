@@ -49,6 +49,18 @@ public:
 	string format;
 };
 
+class OptionResult {
+public:
+	OptionResult(const string opt, const int i) {
+		option = opt;
+		index = i;
+	}
+
+	string result;
+	string option;
+	int index;
+};
+
 map<string, InsEntry*> instructions;
 vector<DictEntry*> dictionary;
 vector<CompEntry*> compInstructions;
@@ -62,6 +74,64 @@ string intToString(int n) {
 	res = convert.str();
 
 	return res;
+}
+
+int getFirstSetFromLeft(string bits) {
+	for (int i = 0; i < bits.length(); i++) {
+		if (bits[i] == '1') {
+			return i;
+		}
+	}
+}
+
+int getSecondSetFromLeft(string bits) {
+	bool foundFirst = false;
+
+	for (int i = 0; i < bits.length(); i++) {
+		if (bits[i] == '1' && foundFirst == false) {
+			foundFirst = true;
+		}
+
+		if (bits[i] == '1') {
+			return i;
+		}
+	}
+}
+
+string doBitmask(string ins) {
+	//bitset<4> dIndex(dictIndex);
+	bitset<INSSIZE> instruction(ins);
+	//bitset<INSSIZE> dictEntry(dictionary[dictIndex]->ins);
+	int startLoc = getFirstSetFromLeft(ins);
+	bitset<5> startBits(startLoc);
+	string format = "";
+	string bitmask = "1";
+	string start = startBits.to_string();
+	//string index = dIndex.to_string();
+
+	startLoc++;
+
+	for (int i = startLoc; i < (startLoc + 3); i++) {
+		bitmask += ins[i];
+		//bitmask += intToString((instruction[i] ^ dictEntry[i]));
+	}
+
+	format = start + bitmask; //+ index;
+	 
+	return format;
+}
+
+string getCompFormat(string opt, string result, int dictIndex) {
+	string format = "";
+	bitset<4> dIndex(dictIndex);
+
+	if (opt == "010") {
+		format = doBitmask(result);
+	}
+
+	format += dIndex.to_string();
+
+	return format;
 }
 
 string intToBitString(int num, const int numOfBits) {
@@ -140,10 +210,10 @@ void initDict(int size) {
 	}
 }
 
-string getBestOption(vector<string> ops) {
+OptionResult* getBestOption(vector<OptionResult*> ops) {
 	for (int i = 0; i < OPTCOUNT; i++) {
 		for (int j = 0; j < ops.size(); j++) {
-			if (optionsByPriority[i] == ops[j]) { //found the best option
+			if (optionsByPriority[i] == ops[j]->option) { //found the best option
 				return ops[j];
 			}
 		}
@@ -159,22 +229,23 @@ int getMismatchDistance(bitset<INSSIZE> bits) {
 			first = i;
 		}
 		else if (bits[i] == 1) {
-			last = 1;
+			last = i;
 		}
 	}
 
 	return (first - last - 1);  //return number of bits between mismatches
 }
 
-bool isConsecutive(bitset<INSSIZE> bits) {
+bool isConsecutive(bitset<INSSIZE> bits, int mismatches) {
 	bitset<INSSIZE> temp(bits << 1);
 
-	if ((temp & bits).count() > 0) {
-		return true;
+	for (int i = 0; i < mismatches; i++) {
+		if ((bits & temp) == 0) {
+			return false;
+		}
+		temp = temp << 1;
 	}
-	else {
-		return false;
-	}
+	return true;
 }
 
 int getRLERange(string ins, int start) {
@@ -195,8 +266,9 @@ int getRLERange(string ins, int start) {
 }
 
 void doCompression(string ins, int insIndex) {
-	vector<string> availOptions;
-	string bestOpt;
+	//vector<string> availOptions;
+	vector<OptionResult*> availOptions;
+	OptionResult* bestOpt;
 
 	int mismatches = 0;
 	int distance = -1;
@@ -205,40 +277,50 @@ void doCompression(string ins, int insIndex) {
 	bitset<INSSIZE> insBits(ins);
 
 	for (int i = 0; i < dictionary.size(); i++) { //for each entry in the dictionsry
+		OptionResult* or = new OptionResult("000", i);
 		bitset<INSSIZE> dictBits(dictionary[i]->ins);
 		bitset<INSSIZE> result(insBits ^ dictBits);
 		mismatches = result.count();
+		or ->result = result.to_string();
 
 		if (mismatches > 1) {
 			distance = getMismatchDistance(result);
-			consecutive = isConsecutive(result);
+			consecutive = isConsecutive(result, mismatches);
 		}
 
 		if (mismatches == 0) {
-			availOptions.push_back("111");
+			or ->option = "111";
 		}
 		else if (mismatches == 1) {
-			availOptions.push_back("011");
+			or ->option = "011";
 		}
 		else if (mismatches == 2 && consecutive) {
-			availOptions.push_back("100");
+			or ->option = "100";
 		}
 		else if (mismatches == 4 && consecutive) {
-			availOptions.push_back("101");
+			or ->option = "101";
 		}
 		else if (mismatches > 1 && distance <= 2) {
-			availOptions.push_back("010");
+			or ->option = "010";
 		}
 		else if (mismatches == 2 && distance > 2) {
-			availOptions.push_back("110");
+			or ->option = "110";
 		}
 		else {
-			availOptions.push_back("000");
+			or ->option = "000";
 		}
+		availOptions.push_back(or);
 	}
 
 	bestOpt = getBestOption(availOptions);
-	compInstructions[insIndex]->option = bestOpt;
+	compInstructions[insIndex]->option = bestOpt->option;
+
+	if (bestOpt->option == "000") {
+		compInstructions[insIndex]->format = compInstructions[insIndex]->instruction;
+	}
+	else {
+		compInstructions[insIndex]->format = getCompFormat(bestOpt->option, bestOpt->result, bestOpt->index);
+	}
 }
 
 void doRLE(string ins, int start, int end) {
@@ -251,11 +333,9 @@ void doRLE(string ins, int start, int end) {
 		firstInGroup = start;
 		lastInGroup = end;
 
-		//TODO do compression on first in group
 		doCompression(compInstructions[firstInGroup]->instruction, firstInGroup);
 
 		compInstructions[lastInGroup]->option = "001";
-		//set format to binary string of count
 		compInstructions[lastInGroup]->format = intToBitString((count - 2), 3);
 		return;
 	}
@@ -271,7 +351,6 @@ void doRLE(string ins, int start, int end) {
 			lastInGroup = firstInGroup + 8;
 		}
 
-		//TODO do compression on first in group
 		doCompression(compInstructions[firstInGroup]->instruction, firstInGroup);
 
 		if (firstInGroup != lastInGroup) {  //group has more than one ins
@@ -292,7 +371,7 @@ void compress() {
 
 	for (int i = 0; i < compInstructions.size(); i++) { //for all instructions except the last
 
-		if (i > 0) {  //only ystart checking the last instruction after we have looped once
+		if (i > 0) {  //only start checking the last instruction after we have looped once
 			prevIns = compInstructions[i-1]->instruction;
 			RLEstart = i - 1;
 		}
@@ -304,18 +383,7 @@ void compress() {
 			continue;
 		}
 		
-		if (i >= (compInstructions.size() - 1)) {  //this case occurs when the very last instruction was part of an RLE
-			break;  //the last instruction was already handled by the RLE, so we are done compressing
-		}
-
-		if (i == compInstructions.size() - 2) {  //next instruction is the last instruction
-			//TODO process instruction and done
-			break;
-		}
-
-		//at this point, we know it is not RLE, and we are not done compressing
-
-		//TODO do compression on compInstruction[i]
+		doCompression(compInstructions[i]->instruction, i);
 	}
 
 	//should be done compressing everything at this point
