@@ -49,6 +49,17 @@ public:
 	string format;
 };
 
+class DecompEntry {
+public:
+	DecompEntry(const string opt, const string form) {
+		option = opt;
+		format = form;
+	}
+
+	string option;
+	string format;
+};
+
 class OptionResult {
 public:
 	OptionResult(const string opt, const int i) {
@@ -62,9 +73,39 @@ public:
 };
 
 map<string, InsEntry*> instructions;
+map<string, int> formatBitCounts;
 vector<DictEntry*> dictionary;
 vector<CompEntry*> compInstructions;
+vector<DecompEntry*> decompInstructions;
+vector<string> origionalInstructions;
 string optionsByPriority[] = { "111", "011", "100", "101", "010", "110", "000" };
+int optionFormatCounts[] = { 4, 9, 9, 9, 13, 14, 32 };
+
+int getFileLineCount(string fileName) {
+	ifstream infile(fileName.c_str());
+	string line;
+	int count = 0;
+
+	while (getline(infile, line)) {
+		count++;
+	}
+
+	return count;
+}
+
+int getDictStartNum(string fileName) {
+	ifstream infile(fileName.c_str());
+	string line;
+	int count = 0;
+
+	while (getline(infile, line)) {
+		count++;
+
+		if (line == "xxxx") {
+			return count;  //returns the line number of the first dictionary entry
+		}
+	}
+}
 
 //C++98 helper function for casting an int to a string.  Useful for printing in for loop, and hash map lookups
 string intToString(int n) {
@@ -100,24 +141,20 @@ int getSecondSetFromLeft(string bits) {
 }
 
 string doBitmask(string ins) {
-	//bitset<4> dIndex(dictIndex);
 	bitset<INSSIZE> instruction(ins);
-	//bitset<INSSIZE> dictEntry(dictionary[dictIndex]->ins);
 	int startLoc = getFirstSetFromLeft(ins);
 	bitset<5> startBits(startLoc);
 	string format = "";
 	string bitmask = "1";
 	string start = startBits.to_string();
-	//string index = dIndex.to_string();
 
 	startLoc++;
 
 	for (int i = startLoc; i < (startLoc + 3); i++) {
 		bitmask += ins[i];
-		//bitmask += intToString((instruction[i] ^ dictEntry[i]));
 	}
 
-	format = start + bitmask; //+ index;
+	format = start + bitmask;
 	 
 	return format;
 }
@@ -219,6 +256,14 @@ string findMostFrequent() {
 	return key;
 }
 
+void initFormatBitCounts() {
+	formatBitCounts["001"] = 3;
+	
+	for (int i = 0; i < 7; i++) {
+		formatBitCounts[optionsByPriority[i]] = optionFormatCounts[i];
+	}
+}
+
 void initDict(int size) {
 	string currEntry;
 
@@ -241,6 +286,55 @@ OptionResult* getBestOption(vector<OptionResult*> ops) {
 				return ops[j];
 			}
 		}
+	}
+}
+
+string getAllCompBits(string fileName) {
+	ifstream infile(fileName.c_str());
+	string line;
+	string result = "";
+
+	while (getline(infile, line)) {
+		if (line == "xxxx") {
+			return result;
+		}
+		result += line;
+	}
+}
+
+void getDict(string fileName) {
+	ifstream infile(fileName.c_str());
+	string line;
+	int index = 0;
+	int currLineNum = 0;
+	int lineCount = getFileLineCount(fileName);
+	int start = getDictStartNum(fileName);
+
+	while (getline(infile, line)) {
+		if (currLineNum >= start) {
+			DictEntry* entry = new DictEntry(line, 0);
+			dictionary.push_back(entry);
+		}
+		currLineNum++;
+	}
+}
+
+void getDecompFormat(string fileName) {
+	string allBits = getAllCompBits(fileName);
+	string option;
+	string format;
+
+	for (int i = 0; i < allBits.size(); i++) {
+		option = allBits.substr(i, 3);
+		i += 3;
+		format = allBits.substr(i, formatBitCounts[option]);
+		DecompEntry* entry = new DecompEntry(option, format);
+		decompInstructions.push_back(entry);
+		i += (formatBitCounts[option] - 1);
+	}
+
+	if (decompInstructions[decompInstructions.size() - 1]->option == "000" && decompInstructions[decompInstructions.size() - 1]->format.length() != 32) {
+		decompInstructions.erase(decompInstructions.end() - 1);
 	}
 }
 
@@ -290,7 +384,6 @@ int getRLERange(string ins, int start) {
 }
 
 void doCompression(string ins, int insIndex) {
-	//vector<string> availOptions;
 	vector<OptionResult*> availOptions;
 	OptionResult* bestOpt;
 
@@ -452,6 +545,7 @@ void printCompressed(ofstream &file) {
 }
 
 int main(int argc, char* argv[]) {
+	/*
 	countInstructions("origional.txt");
 	initDict(16);
 	compress();
@@ -459,6 +553,11 @@ int main(int argc, char* argv[]) {
 	ofstream outputFile("./compressed.txt");
 	printCompressed(outputFile);
 	outputFile.close();
+	*/
+
+	initFormatBitCounts();
+	getDict("compressedtest.txt");
+	getDecompFormat("compressedtest.txt");
 
 	return 0;
 }
