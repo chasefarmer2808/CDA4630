@@ -1,3 +1,5 @@
+/* On my honor, I have neither given nor received unauthorized aid on this assignment */
+
 #include <iostream>
 #include <stdlib.h>
 #include <fstream>
@@ -8,12 +10,13 @@
 #include <bitset>
 #include <math.h>
 
-#define RLELIMIT 9.0
-#define INSSIZE 32
-#define OPTCOUNT 7
+#define RLELIMIT 9.0  //limit to number of ins in RLE application
+#define INSSIZE 32  //num of bits in an instruction
+#define OPTCOUNT 7  //number of compression options
 
 using namespace std;
 
+//placed in dictronary vector.  holds the instruction and the frequency
 class DictEntry {
 public:
 	DictEntry(const string instruction, const int freq) {
@@ -25,6 +28,7 @@ public:
 	int frequency;
 };
 
+//used to get the most frequent instruction that occured first
 class InsEntry {
 public:
 	InsEntry(const int freq, const int index) {
@@ -36,6 +40,7 @@ public:
 	int firstOccurance;
 };
 
+//holds all compression information for an instruction
 class CompEntry {
 public:
 	CompEntry(const string ins) {
@@ -49,6 +54,7 @@ public:
 	string format;
 };
 
+//holds all decomp info for a compressed instruciton
 class DecompEntry {
 public:
 	DecompEntry(const string opt, const string form) {
@@ -72,15 +78,16 @@ public:
 	int index;
 };
 
-map<string, InsEntry*> instructions;
-map<string, int> formatBitCounts;
-vector<DictEntry*> dictionary;
-vector<CompEntry*> compInstructions;
-vector<DecompEntry*> decompInstructions;
-vector<string> origionalInstructions;
+map<string, InsEntry*> instructions;  //map of the instructions and their frequencies
+map<string, int> formatBitCounts;  //map of an option to the bits in their format blocks
+vector<DictEntry*> dictionary;  //the dictionary to hold 16 most frequent instructions
+vector<CompEntry*> compInstructions;  //gets filled as compression goes
+vector<DecompEntry*> decompInstructions;  //gets filled as decomp goes
+vector<string> origionalInstructions;  //decomp puts results of decompression here
 string optionsByPriority[] = { "111", "011", "100", "101", "010", "110", "000" };
 int optionFormatCounts[] = { 4, 9, 9, 9, 13, 14, 32 };
 
+//returns the number of lines in a file
 int getFileLineCount(string fileName) {
 	ifstream infile(fileName.c_str());
 	string line;
@@ -93,6 +100,7 @@ int getFileLineCount(string fileName) {
 	return count;
 }
 
+//returns the line in a file where the dictionary starts
 int getDictStartNum(string fileName) {
 	ifstream infile(fileName.c_str());
 	string line;
@@ -117,6 +125,7 @@ string intToString(int n) {
 	return res;
 }
 
+//gets the first set bit in a bit string starting at the MSB
 int getFirstSetFromLeft(string bits) {
 	for (int i = 0; i < bits.length(); i++) {
 		if (bits[i] == '1') {
@@ -125,6 +134,7 @@ int getFirstSetFromLeft(string bits) {
 	}
 }
 
+//same as above but gets the second
 int getSecondSetFromLeft(string bits) {
 	bool foundFirst = false;
 
@@ -140,6 +150,7 @@ int getSecondSetFromLeft(string bits) {
 	}
 }
 
+//return the format of a bitmask comp operation
 string doBitmask(string ins) {
 	bitset<INSSIZE> instruction(ins);
 	int startLoc = getFirstSetFromLeft(ins);
@@ -159,12 +170,14 @@ string doBitmask(string ins) {
 	return format;
 }
 
+//do a 1, 2, or 4 bit mismatch comp operation
 string doNBitMismatch(string ins) {
 	int startLoc = getFirstSetFromLeft(ins);
 	bitset<5> startBits(startLoc);
 	return startBits.to_string();
 }
 
+//do 2 mismatches anywhere comp operation
 string doTwoMismatchAnywhere(string ins) {
 	int first = getFirstSetFromLeft(ins);
 	int second = getSecondSetFromLeft(ins);
@@ -176,6 +189,7 @@ string doTwoMismatchAnywhere(string ins) {
 	return format;
 }
 
+//get the bit string to represent the compressed instruction
 string getCompFormat(string opt, string result, int dictIndex) {
 	string format = "";
 	bitset<4> dIndex(dictIndex);
@@ -195,6 +209,7 @@ string getCompFormat(string opt, string result, int dictIndex) {
 	return format;
 }
 
+//convert a number to a bit string
 string intToBitString(int num, const int numOfBits) {
 	string bitString = "";
 	int MSB = 1 << (numOfBits - 1);
@@ -216,6 +231,7 @@ string intToBitString(int num, const int numOfBits) {
 	return bitString;
 }
 
+//assign each instruction with a frequency
 void countInstructions(string fileName) {
 	ifstream infile(fileName.c_str());
 	string line;
@@ -233,6 +249,7 @@ void countInstructions(string fileName) {
 	}
 }
 
+//get the most frewirnt instruction
 string findMostFrequent() {
 	int max = 0;
 	int occurance = 0;
@@ -264,6 +281,7 @@ void initFormatBitCounts() {
 	}
 }
 
+//create the dictionary when compressing
 void initDict(int size) {
 	string currEntry;
 
@@ -279,6 +297,7 @@ void initDict(int size) {
 	}
 }
 
+//get the best option to use
 OptionResult* getBestOption(vector<OptionResult*> ops) {
 	for (int i = 0; i < OPTCOUNT; i++) {
 		for (int j = 0; j < ops.size(); j++) {
@@ -289,6 +308,7 @@ OptionResult* getBestOption(vector<OptionResult*> ops) {
 	}
 }
 
+//make the compressed bits all one long string
 string getAllCompBits(string fileName) {
 	ifstream infile(fileName.c_str());
 	string line;
@@ -302,6 +322,7 @@ string getAllCompBits(string fileName) {
 	}
 }
 
+//extract the dictionary from a file
 void getDict(string fileName) {
 	ifstream infile(fileName.c_str());
 	string line;
@@ -319,6 +340,7 @@ void getDict(string fileName) {
 	}
 }
 
+//extract options and formats from compressed bits
 void getDecompFormat(string fileName) {
 	string allBits = getAllCompBits(fileName);
 	string option;
@@ -338,6 +360,7 @@ void getDecompFormat(string fileName) {
 	}
 }
 
+//get the number of bits between two set bits
 int getMismatchDistance(bitset<INSSIZE> bits) {
 	int first = 0;
 	int last = 0;
@@ -354,6 +377,7 @@ int getMismatchDistance(bitset<INSSIZE> bits) {
 	return (first - last - 1);  //return number of bits between mismatches
 }
 
+//check if the mismatched bits are consecutive
 bool isConsecutive(bitset<INSSIZE> bits, int mismatches) {
 	bitset<INSSIZE> temp(bits << 1);
 
@@ -366,6 +390,7 @@ bool isConsecutive(bitset<INSSIZE> bits, int mismatches) {
 	return true;
 }
 
+//get the end index of an RLE applcation
 int getRLERange(string ins, int start) {
 	int end = 0;
 
@@ -383,6 +408,7 @@ int getRLERange(string ins, int start) {
 	return end;
 }
 
+//start compressing stuff
 void doCompression(string ins, int insIndex) {
 	vector<OptionResult*> availOptions;
 	OptionResult* bestOpt;
@@ -648,24 +674,26 @@ void printDecompression(ofstream &file) {
 }
 
 int main(int argc, char* argv[]) {
-	/*
-	countInstructions("origional.txt");
-	initDict(16);
-	compress();
 
-	ofstream outputFile("./compressed.txt");
-	printCompressed(outputFile);
-	outputFile.close();
-	*/
+	if (*argv[1] == '1') { //compression
+		countInstructions("origional.txt");
+		initDict(16);
+		compress();
 
-	initFormatBitCounts();
-	getDict("compressedtest.txt");
-	getDecompFormat("compressedtest.txt");
-	decompress();
+		ofstream outputFile("./cout.txt");
+		printCompressed(outputFile);
+		outputFile.close();
+	}
+	else if (*argv[1] == '2') { //decompressing 
+		initFormatBitCounts();
+		getDict("compressed.txt"); 
+		getDecompFormat("compressed.txt");
+		decompress();
 
-	ofstream outputFile("./decompressed.txt");
-	printDecompression(outputFile);
-	outputFile.close();
+		ofstream outputFile("./dout.txt");
+		printDecompression(outputFile);
+		outputFile.close();
+	}
 
 	return 0;
 }
