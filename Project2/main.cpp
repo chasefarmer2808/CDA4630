@@ -301,11 +301,11 @@ void doCompression(string ins, int insIndex) {
 	bitset<INSSIZE> insBits(ins);
 
 	for (int i = 0; i < dictionary.size(); i++) { //for each entry in the dictionsry
-		OptionResult* or = new OptionResult("000", i);
+		OptionResult* optRes = new OptionResult("000", i);
 		bitset<INSSIZE> dictBits(dictionary[i]->ins);
 		bitset<INSSIZE> result(insBits ^ dictBits);
 		mismatches = result.count();
-		or->result = result.to_string();
+		optRes->result = result.to_string();
 
 		if (mismatches > 1) {
 			distance = getMismatchDistance(result);
@@ -313,27 +313,27 @@ void doCompression(string ins, int insIndex) {
 		}
 
 		if (mismatches == 0) {
-			or->option = "111";
+			optRes->option = "111";
 		}
 		else if (mismatches == 1) {
-			or->option = "011";
+			optRes->option = "011";
 		}
 		else if (mismatches == 2 && consecutive) {
-			or->option = "100";
+			optRes->option = "100";
 		}
 		else if (mismatches == 4 && consecutive) {
-			or->option = "101";
+			optRes->option = "101";
 		}
 		else if (mismatches > 1 && distance <= 2) {
-			or->option = "010";
+			optRes->option = "010";
 		}
 		else if (mismatches == 2 && distance > 2) {
-			or->option = "110";
+			optRes->option = "110";
 		}
 		else {
-			or->option = "000";
+			optRes->option = "000";
 		}
-		availOptions.push_back(or);
+		availOptions.push_back(optRes);
 	}
 
 	bestOpt = getBestOption(availOptions);
