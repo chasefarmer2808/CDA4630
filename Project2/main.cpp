@@ -440,6 +440,90 @@ void doCompression(string ins, int insIndex) {
 	}
 }
 
+int getStartLocation(string bits) {
+	bitset<5> loc(bits);
+	return loc.to_ulong();
+}
+
+int getDictIndex(string bits) {
+	bitset<4> ind(bits);
+	return ind.to_ulong();
+}
+
+
+void doDecompression(string option, string format, string prevIns) {
+	bitset<32> resultBits(0);
+	bitset<32> origionalIns(0);
+	int start;
+	int dictIndex;
+
+	if (option == "000") {
+		origionalInstructions.push_back(format);
+	}
+	else if (option == "001") {
+		bitset<3> formatBits(format);
+		int count = formatBits.to_ulong();
+
+		for (int i = 0; i <= count; i++) {
+			origionalInstructions.push_back(prevIns);
+		}
+	}
+	else if (option == "010") {
+		start = getStartLocation(format.substr(0, 5));
+		dictIndex = getDictIndex(format.substr(9, 4));
+		bitset<32> bitMask(format.substr(5, 4));
+		bitMask = bitMask << (31 - start - 3);
+		bitset<32> dictEntry(dictionary[dictIndex]->ins);
+		resultBits = resultBits ^ bitMask;
+		origionalIns = resultBits ^ dictEntry;
+		origionalInstructions.push_back(origionalIns.to_string());
+	}
+	else if (option == "011") {
+		start = getStartLocation(format.substr(0, 5));
+		dictIndex = getDictIndex(format.substr(9, 4));
+		bitset<32> dictEntry(dictionary[dictIndex]->ins);
+		resultBits[31 - start].flip();
+		origionalIns = resultBits ^ dictEntry;
+		origionalInstructions.push_back(origionalIns.to_string());
+	}
+	else if (option == "100") {
+		start = getStartLocation(format.substr(0, 5));
+		dictIndex = getDictIndex(format.substr(9, 4));
+		bitset<32> dictEntry(dictionary[dictIndex]->ins);
+		resultBits[31 - start].flip();
+		resultBits[31 - (start+1)].flip();
+		resultBits[31 - (start + 2)].flip();
+		origionalIns = resultBits ^ dictEntry;
+		origionalInstructions.push_back(origionalIns.to_string());
+	}
+	else if (option == "101") {
+		start = getStartLocation(format.substr(0, 5));
+		dictIndex = getDictIndex(format.substr(9, 4));
+		bitset<32> dictEntry(dictionary[dictIndex]->ins);
+		resultBits[31 - start].flip();
+		resultBits[31 - (start + 1)].flip();
+		resultBits[31 - (start + 2)].flip();
+		resultBits[31 - (start + 3)].flip();
+		origionalIns = resultBits ^ dictEntry;
+		origionalInstructions.push_back(origionalIns.to_string());
+	}
+	else if (option == "110") {
+		int first = getStartLocation(format.substr(0, 5));
+		int second = getStartLocation(format.substr(5, 5));
+		resultBits[31 - first].flip();
+		resultBits[31 - second].flip();
+		dictIndex = getDictIndex(format.substr(10, 4));
+		bitset<32> dictEntry(dictionary[dictIndex]->ins);
+		origionalIns = resultBits ^ dictEntry;
+		origionalInstructions.push_back(origionalIns.to_string());
+	}
+	else {
+		dictIndex = getDictIndex(format.substr(0, 4));
+		origionalInstructions.push_back(dictionary[dictIndex]->ins);
+	}
+}
+
+
 void doRLE(string ins, int start, int end) {
 	int count = end - start + 1;
 	int groups = ceil((float)count / RLELIMIT);
@@ -508,6 +592,19 @@ void compress() {
 	return;
 }
 
+void decompress() {
+	string prevIns;
+
+	for (int i = 0; i < decompInstructions.size(); i++) {
+
+		if (i > 0) {
+			prevIns = origionalInstructions[origionalInstructions.size()-1];
+		}
+
+		doDecompression(decompInstructions[i]->option, decompInstructions[i]->format, prevIns);
+	}
+}
+
 void printCompressed(ofstream &file) {
 	int lineCount = 0;
 	string compString;
@@ -544,6 +641,12 @@ void printCompressed(ofstream &file) {
 	}
 }
 
+void printDecompression(ofstream &file) {
+	for (int i = 0; i < origionalInstructions.size(); i++) {
+		file << origionalInstructions[i] << endl;
+	}
+}
+
 int main(int argc, char* argv[]) {
 	/*
 	countInstructions("origional.txt");
@@ -558,6 +661,11 @@ int main(int argc, char* argv[]) {
 	initFormatBitCounts();
 	getDict("compressedtest.txt");
 	getDecompFormat("compressedtest.txt");
+	decompress();
+
+	ofstream outputFile("./decompressed.txt");
+	printDecompression(outputFile);
+	outputFile.close();
 
 	return 0;
 }
