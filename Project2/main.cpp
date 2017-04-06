@@ -381,7 +381,7 @@ int getMismatchDistance(bitset<INSSIZE> bits) {
 bool isConsecutive(bitset<INSSIZE> bits, int mismatches) {
 	bitset<INSSIZE> temp(bits << 1);
 
-	for (int i = 0; i < mismatches; i++) {
+	for (int i = 0; i < (mismatches-1); i++) {
 		if ((bits & temp) == 0) {
 			return false;
 		}
@@ -506,7 +506,7 @@ void doDecompression(string option, string format, string prevIns) {
 	}
 	else if (option == "011") {
 		start = getStartLocation(format.substr(0, 5));
-		dictIndex = getDictIndex(format.substr(9, 4));
+		dictIndex = getDictIndex(format.substr(5, 4));
 		bitset<32> dictEntry(dictionary[dictIndex]->ins);
 		resultBits[31 - start].flip();
 		origionalIns = resultBits ^ dictEntry;
@@ -514,17 +514,16 @@ void doDecompression(string option, string format, string prevIns) {
 	}
 	else if (option == "100") {
 		start = getStartLocation(format.substr(0, 5));
-		dictIndex = getDictIndex(format.substr(9, 4));
+		dictIndex = getDictIndex(format.substr(5, 4));
 		bitset<32> dictEntry(dictionary[dictIndex]->ins);
 		resultBits[31 - start].flip();
 		resultBits[31 - (start+1)].flip();
-		resultBits[31 - (start + 2)].flip();
 		origionalIns = resultBits ^ dictEntry;
 		origionalInstructions.push_back(origionalIns.to_string());
 	}
 	else if (option == "101") {
 		start = getStartLocation(format.substr(0, 5));
-		dictIndex = getDictIndex(format.substr(9, 4));
+		dictIndex = getDictIndex(format.substr(5, 4));
 		bitset<32> dictEntry(dictionary[dictIndex]->ins);
 		resultBits[31 - start].flip();
 		resultBits[31 - (start + 1)].flip();
